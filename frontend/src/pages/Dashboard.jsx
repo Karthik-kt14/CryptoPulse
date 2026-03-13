@@ -1970,6 +1970,593 @@
 
 
 
+
+
+
+
+// import { useState, useEffect, useRef } from "react";
+// import { fetchCryptos, addCrypto, searchCrypto } from "../services/api";
+// import CryptoCard from "../components/CryptoCard";
+// import { useNavigate } from "react-router-dom";
+// import { RiLogoutBoxLine } from "react-icons/ri";
+
+// export default function Dashboard() {
+//   const navigate = useNavigate();
+
+//   const [cryptos, setCryptos] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
+
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [searchInput, setSearchInput] = useState("");
+//   const [suggestions, setSuggestions] = useState([]);
+//   const [isAdding, setIsAdding] = useState(false);
+//   const [searching, setSearching] = useState(false);
+
+//   const popupRef = useRef(null);
+//   const searchInputRef = useRef(null);
+
+//   const loadCryptos = async () => {
+//     try {
+//       setLoading(true);
+//       setError("");
+
+//       const res = await fetchCryptos();
+
+//       if (Array.isArray(res.data)) {
+//         setCryptos(res.data);
+//       } else {
+//         setCryptos([]);
+//       }
+//     } catch (err) {
+//       console.error("Fetch crypto error:", err);
+//       setCryptos([]);
+//       setError(err.response?.data?.message || "Failed to fetch crypto data");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     if (!token) navigate("/login");
+//   }, [navigate]);
+
+//   useEffect(() => {
+//     loadCryptos();
+//   }, []);
+
+//   useEffect(() => {
+//     const delay = setTimeout(async () => {
+//       const q = searchInput.trim();
+
+//       if (!q) {
+//         setSuggestions([]);
+//         setSearching(false);
+//         return;
+//       }
+
+//       if (q.length < 3) {
+//         setSuggestions([]);
+//         setSearching(false);
+//         return;
+//       }
+
+//       try {
+//         setSearching(true);
+//         const res = await searchCrypto(q);
+//         setSuggestions(Array.isArray(res.data) ? res.data : []);
+//       } catch (err) {
+//         console.error("Search failed:", err);
+//         setSuggestions([]);
+//       } finally {
+//         setSearching(false);
+//       }
+//     }, 800);
+
+//     return () => clearTimeout(delay);
+//   }, [searchInput]);
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (popupRef.current && !popupRef.current.contains(event.target)) {
+//         closePopup();
+//       }
+//     };
+
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () => document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
+
+//   const handleAddCrypto = async (symbol) => {
+//     const cryptoToAdd = (symbol || searchInput).trim();
+
+//     if (!cryptoToAdd) {
+//       setError("Please enter a cryptocurrency");
+//       return;
+//     }
+
+//     setIsAdding(true);
+//     setError("");
+
+//     try {
+//       const result = await addCrypto(cryptoToAdd);
+
+//       if (result.data?.message === "Already added") {
+//         await loadCryptos();
+//         closePopup();
+//         return;
+//       }
+
+//       if (result.data?.success) {
+//         await loadCryptos();
+//         closePopup();
+//         return;
+//       }
+
+//       throw new Error(result.data?.message || "Failed to add crypto");
+//     } catch (err) {
+//       console.error("Add crypto error:", err);
+//       const errorMessage =
+//         err.response?.data?.message || err.message || "Failed to add crypto";
+//       setError(errorMessage);
+//     } finally {
+//       setIsAdding(false);
+//     }
+//   };
+
+//   const handleKeyDown = (e) => {
+//     if (e.key === "Enter") {
+//       e.preventDefault();
+//       handleAddCrypto();
+//     }
+//   };
+
+//   const closePopup = () => {
+//     setShowPopup(false);
+//     setSearchInput("");
+//     setSuggestions([]);
+//     setSearching(false);
+//     setError("");
+//   };
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("token");
+//     navigate("/login");
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+//       <div className="max-w-7xl mx-auto">
+//         <header className="flex justify-between items-center mb-8">
+//           <div>
+//             <h1 className="text-3xl font-bold text-white">Crypto Dashboard</h1>
+//             <p className="text-gray-400">
+//               Track your favorite ❤️ cryptocurrencies
+//             </p>
+//           </div>
+
+//           <button
+//             onClick={handleLogout}
+//             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+//           >
+//             <RiLogoutBoxLine className="inline-block text-xl" /> Logout
+//           </button>
+//         </header>
+
+//         {loading && (
+//           <div className="text-center py-12 text-white">
+//             <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2 rounded-full"></div>
+//             <p>Loading your cryptocurrencies...</p>
+//           </div>
+//         )}
+
+//         {error && (
+//           <div className="bg-red-900 text-red-100 p-4 mb-4 rounded-lg">
+//             <div className="flex justify-between">
+//               <div>{error}</div>
+//               <button onClick={() => setError("")}>×</button>
+//             </div>
+//           </div>
+//         )}
+
+//         {!loading && (
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+//             {cryptos.map((crypto) => (
+//               <CryptoCard
+//                 key={crypto.id}
+//                 crypto={crypto}
+//                 onDelete={async () => {
+//                   await loadCryptos();
+//                 }}
+//               />
+//             ))}
+
+//             <div
+//               className="bg-gray-700/40 hover:bg-gray-600 cursor-pointer flex items-center justify-center rounded-xl h-48"
+//               onClick={() => {
+//                 setShowPopup(true);
+//                 setTimeout(() => searchInputRef.current?.focus(), 100);
+//               }}
+//             >
+//               <span className="text-white text-4xl">+</span>
+//             </div>
+//           </div>
+//         )}
+
+//         {showPopup && (
+//           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+//             <div ref={popupRef} className="bg-gray-800 rounded-xl p-6 w-80">
+//               <h3 className="text-white font-bold mb-4">Add Cryptocurrency</h3>
+
+//               <form
+//                 onSubmit={(e) => {
+//                   e.preventDefault();
+//                   handleAddCrypto();
+//                 }}
+//               >
+//                 <input
+//                   ref={searchInputRef}
+//                   type="text"
+//                   placeholder="bitcoin, ethereum, solana..."
+//                   value={searchInput}
+//                   onChange={(e) => setSearchInput(e.target.value)}
+//                   onKeyDown={handleKeyDown}
+//                   className="w-full bg-gray-700 text-white border border-gray-600 rounded px-3 py-2 mb-3"
+//                 />
+
+//                 {searching && (
+//                   <div className="text-sm text-gray-400 mb-2">Searching...</div>
+//                 )}
+
+//                 {suggestions.length > 0 && (
+//                   <ul className="max-h-40 overflow-y-auto mb-3 space-y-1">
+//                     {suggestions.map((coin) => (
+//                       <li
+//                         key={coin.id}
+//                         onClick={() => {
+//                           setSearchInput(coin.id);
+//                           setSuggestions([]);
+//                         }}
+//                         className="p-2 bg-gray-700 hover:bg-gray-600 rounded text-white cursor-pointer"
+//                       >
+//                         <div className="flex justify-between">
+//                           <span>{coin.name}</span>
+//                           <span className="text-gray-400 text-sm">
+//                             {coin.symbol.toUpperCase()}
+//                           </span>
+//                         </div>
+//                       </li>
+//                     ))}
+//                   </ul>
+//                 )}
+
+//                 <button
+//                   type="submit"
+//                   disabled={!searchInput.trim() || isAdding}
+//                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded disabled:opacity-50"
+//                 >
+//                   {isAdding ? "Adding..." : `Add ${searchInput.toUpperCase()}`}
+//                 </button>
+//               </form>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+// import { useState, useEffect, useRef } from "react";
+// import { fetchCryptos, addCrypto, searchCrypto } from "../services/api";
+// import CryptoCard from "../components/CryptoCard";
+// import { useNavigate } from "react-router-dom";
+// import { RiLogoutBoxLine } from "react-icons/ri";
+
+// export default function Dashboard() {
+//   const navigate = useNavigate();
+
+//   const [cryptos, setCryptos] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
+
+//   const [showPopup, setShowPopup] = useState(false);
+//   const [searchInput, setSearchInput] = useState("");
+//   const [suggestions, setSuggestions] = useState([]);
+//   const [isAdding, setIsAdding] = useState(false);
+//   const [searching, setSearching] = useState(false);
+
+//   const popupRef = useRef(null);
+//   const searchInputRef = useRef(null);
+
+//   /* =========================
+//      Redirect if not logged in
+//   ========================= */
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     if (!token) navigate("/login");
+//   }, [navigate]);
+
+//   /* =========================
+//      Load user cryptos
+//   ========================= */
+//   const loadCryptos = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetchCryptos();
+//       setCryptos(Array.isArray(res.data) ? res.data : []);
+//       setError("");
+//     } catch (err) {
+//       console.error("Fetch crypto error:", err);
+//       setCryptos([]);
+//       setError(err.response?.data?.message || "Failed to fetch crypto data");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadCryptos();
+//   }, []);
+
+//   /* =========================
+//      Search suggestions from API
+//   ========================= */
+//   useEffect(() => {
+//     const delay = setTimeout(async () => {
+//       const query = searchInput.trim().toLowerCase();
+
+//       if (!query) {
+//         setSuggestions([]);
+//         setSearching(false);
+//         return;
+//       }
+
+//       if (query.length < 3) {
+//         setSuggestions([]);
+//         setSearching(false);
+//         return;
+//       }
+
+//       try {
+//         setSearching(true);
+//         const res = await searchCrypto(query);
+//         setSuggestions(Array.isArray(res.data) ? res.data : []);
+//       } catch (err) {
+//         console.error("Search failed:", err);
+//         setSuggestions([]);
+//       } finally {
+//         setSearching(false);
+//       }
+//     }, 800);
+
+//     return () => clearTimeout(delay);
+//   }, [searchInput]);
+
+//   /* =========================
+//      Close popup on outside click
+//   ========================= */
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (popupRef.current && !popupRef.current.contains(event.target)) {
+//         closePopup();
+//       }
+//     };
+
+//     document.addEventListener("mousedown", handleClickOutside);
+//     return () =>
+//       document.removeEventListener("mousedown", handleClickOutside);
+//   }, []);
+
+//   /* =========================
+//      Add crypto
+//   ========================= */
+//   const handleAddCrypto = async (symbol) => {
+//     const cryptoToAdd = (symbol || searchInput.trim()).toLowerCase();
+
+//     if (!cryptoToAdd) {
+//       setError("Please enter a cryptocurrency");
+//       return;
+//     }
+
+//     if (isAdding) return;
+
+//     setIsAdding(true);
+//     setError("");
+
+//     try {
+//       const result = await addCrypto(cryptoToAdd);
+
+//       // If your addCrypto returns axios response, use result.data here instead.
+//       if (result.success) {
+//         await loadCryptos();
+//         closePopup();
+//       } else {
+//         throw new Error(result.message || "Failed to add crypto");
+//       }
+//     } catch (err) {
+//       console.error("Add crypto error:", err);
+
+//       let errorMessage =
+//         err.response?.data?.message || err.message || "Failed to add crypto";
+
+//       if (err.response?.status === 429) {
+//         errorMessage = "Too many requests. Please wait a few seconds.";
+//       }
+
+//       // refresh dashboard if coin already exists / already added
+//       if (
+//         errorMessage.toLowerCase().includes("exists") ||
+//         errorMessage.toLowerCase().includes("already")
+//       ) {
+//         await loadCryptos();
+//         closePopup();
+//         setIsAdding(false);
+//         return;
+//       }
+
+//       setError(errorMessage);
+//     } finally {
+//       setIsAdding(false);
+//     }
+//   };
+
+//   /* =========================
+//      Enter key add
+//   ========================= */
+//   const handleKeyDown = (e) => {
+//     if (e.key === "Enter") {
+//       e.preventDefault();
+//       handleAddCrypto();
+//     }
+//   };
+
+//   /* =========================
+//      Close popup
+//   ========================= */
+//   const closePopup = () => {
+//     setShowPopup(false);
+//     setSearchInput("");
+//     setSuggestions([]);
+//     setSearching(false);
+//     setError("");
+//   };
+
+//   /* =========================
+//      Logout
+//   ========================= */
+//   const handleLogout = () => {
+//     localStorage.removeItem("token");
+//     navigate("/login");
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+//       <div className="max-w-7xl mx-auto">
+//         {/* HEADER */}
+//         <header className="flex justify-between items-center mb-8">
+//           <div>
+//             <h1 className="text-3xl font-bold text-white">
+//               Crypto Dashboard
+//             </h1>
+//             <p className="text-gray-400">
+//               Track your favorite ❤️ cryptocurrencies
+//             </p>
+//           </div>
+
+//           <button
+//             onClick={handleLogout}
+//             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+//           >
+//             <RiLogoutBoxLine className="inline-block text-xl" /> Logout
+//           </button>
+//         </header>
+
+//         {/* LOADING */}
+//         {loading && (
+//           <div className="text-center text-white py-10">
+//             Loading your cryptocurrencies...
+//           </div>
+//         )}
+
+//         {/* ERROR */}
+//         {error && (
+//           <div className="bg-red-900 text-red-200 p-4 rounded mb-4">
+//             {error}
+//           </div>
+//         )}
+
+//         {/* CRYPTO GRID */}
+//         {!loading && (
+//           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+//             {cryptos.map((crypto) => (
+//               <CryptoCard
+//                 key={crypto.id || crypto.symbol}
+//                 crypto={crypto}
+//                 onDelete={(deletedId) =>
+//                   setCryptos((prev) =>
+//                     prev.filter((c) => c.id !== deletedId)
+//                   )
+//                 }
+//               />
+//             ))}
+
+//             {/* ADD CARD */}
+//             <div
+//               className="bg-gray-700/40 hover:bg-gray-600 cursor-pointer flex items-center justify-center rounded-xl h-48"
+//               onClick={() => {
+//                 setShowPopup(true);
+//                 setTimeout(() => searchInputRef.current?.focus(), 100);
+//               }}
+//             >
+//               <span className="text-white text-4xl">+</span>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* POPUP */}
+//         {showPopup && (
+//           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+//             <div
+//               ref={popupRef}
+//               className="bg-gray-800 rounded-xl p-6 w-80"
+//             >
+//               <h3 className="text-lg font-bold text-white mb-4">
+//                 Add Cryptocurrency
+//               </h3>
+
+//               <input
+//                 ref={searchInputRef}
+//                 type="text"
+//                 placeholder="bitcoin, ethereum, solana..."
+//                 value={searchInput}
+//                 onChange={(e) => setSearchInput(e.target.value.toLowerCase())}
+//                 onKeyDown={handleKeyDown}
+//                 className="w-full bg-gray-700 text-white rounded px-3 py-2 mb-3"
+//               />
+
+//               {searching && (
+//                 <div className="text-sm text-gray-400 mb-2">Searching...</div>
+//               )}
+
+//               {suggestions.length > 0 && (
+//                 <ul className="max-h-40 overflow-y-auto space-y-2 mb-3">
+//                   {suggestions.map((coin) => (
+//                     <li
+//                       key={coin.id}
+//                       onClick={() => {
+//                         setSearchInput(coin.id.toLowerCase());
+//                         setSuggestions([]);
+//                       }}
+//                       className="cursor-pointer p-2 bg-gray-700 hover:bg-gray-600 text-white rounded"
+//                     >
+//                       {coin.name} ({coin.symbol.toUpperCase()})
+//                     </li>
+//                   ))}
+//                 </ul>
+//               )}
+
+//               <button
+//                 onClick={() => handleAddCrypto()}
+//                 disabled={!searchInput.trim() || isAdding}
+//                 className="w-full bg-blue-600 text-white py-2 rounded-lg disabled:opacity-50"
+//               >
+//                 {isAdding ? "Adding..." : `Add ${searchInput}`}
+//               </button>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
 import { useState, useEffect, useRef } from "react";
 import { fetchCryptos, addCrypto, searchCrypto } from "../services/api";
 import CryptoCard from "../components/CryptoCard";
@@ -1992,18 +2579,17 @@ export default function Dashboard() {
   const popupRef = useRef(null);
   const searchInputRef = useRef(null);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) navigate("/login");
+  }, [navigate]);
+
   const loadCryptos = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError("");
-
       const res = await fetchCryptos();
-
-      if (Array.isArray(res.data)) {
-        setCryptos(res.data);
-      } else {
-        setCryptos([]);
-      }
+      setCryptos(Array.isArray(res.data) ? res.data : []);
+      setError("");
     } catch (err) {
       console.error("Fetch crypto error:", err);
       setCryptos([]);
@@ -2014,25 +2600,20 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) navigate("/login");
-  }, [navigate]);
-
-  useEffect(() => {
     loadCryptos();
   }, []);
 
   useEffect(() => {
     const delay = setTimeout(async () => {
-      const q = searchInput.trim();
+      const query = searchInput.trim().toLowerCase();
 
-      if (!q) {
+      if (!query) {
         setSuggestions([]);
         setSearching(false);
         return;
       }
 
-      if (q.length < 3) {
+      if (query.length < 3) {
         setSuggestions([]);
         setSearching(false);
         return;
@@ -2040,7 +2621,7 @@ export default function Dashboard() {
 
       try {
         setSearching(true);
-        const res = await searchCrypto(q);
+        const res = await searchCrypto(query);
         setSuggestions(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Search failed:", err);
@@ -2061,28 +2642,25 @@ export default function Dashboard() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleAddCrypto = async (symbol) => {
-    const cryptoToAdd = (symbol || searchInput).trim();
+    const cryptoToAdd = (symbol || searchInput.trim()).toLowerCase();
 
     if (!cryptoToAdd) {
-      setError("Please enter a cryptocurrency");
+      setError("Please enter a cryptocurrency symbol");
       return;
     }
+
+    if (isAdding) return;
 
     setIsAdding(true);
     setError("");
 
     try {
       const result = await addCrypto(cryptoToAdd);
-
-      if (result.data?.message === "Already added") {
-        await loadCryptos();
-        closePopup();
-        return;
-      }
 
       if (result.data?.success) {
         await loadCryptos();
@@ -2093,8 +2671,23 @@ export default function Dashboard() {
       throw new Error(result.data?.message || "Failed to add crypto");
     } catch (err) {
       console.error("Add crypto error:", err);
-      const errorMessage =
-        err.response?.data?.message || err.message || "Failed to add crypto";
+
+      let errorMessage =
+        err.response?.data?.message || err.message || "Failed to add coin";
+
+      if (err.response?.status === 429) {
+        errorMessage = "Too many requests. Please wait a few seconds.";
+      }
+
+      if (
+        errorMessage.toLowerCase().includes("exists") ||
+        errorMessage.toLowerCase().includes("already")
+      ) {
+        await loadCryptos();
+        closePopup();
+        return;
+      }
+
       setError(errorMessage);
     } finally {
       setIsAdding(false);
@@ -2126,7 +2719,9 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Crypto Dashboard</h1>
+            <h1 className="text-3xl font-bold text-white">
+              Crypto Dashboard
+            </h1>
             <p className="text-gray-400">
               Track your favorite ❤️ cryptocurrencies
             </p>
@@ -2141,18 +2736,14 @@ export default function Dashboard() {
         </header>
 
         {loading && (
-          <div className="text-center py-12 text-white">
-            <div className="animate-spin h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto mb-2 rounded-full"></div>
-            <p>Loading your cryptocurrencies...</p>
+          <div className="text-center text-white py-10">
+            Loading your cryptocurrencies...
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900 text-red-100 p-4 mb-4 rounded-lg">
-            <div className="flex justify-between">
-              <div>{error}</div>
-              <button onClick={() => setError("")}>×</button>
-            </div>
+          <div className="bg-red-900 text-red-200 p-4 rounded mb-4">
+            {error}
           </div>
         )}
 
@@ -2160,11 +2751,13 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {cryptos.map((crypto) => (
               <CryptoCard
-                key={crypto.id}
+                key={crypto.id || crypto.symbol}
                 crypto={crypto}
-                onDelete={async () => {
-                  await loadCryptos();
-                }}
+                onDelete={(deletedId) =>
+                  setCryptos((prev) =>
+                    prev.filter((c) => c.id !== deletedId)
+                  )
+                }
               />
             ))}
 
@@ -2182,59 +2775,52 @@ export default function Dashboard() {
 
         {showPopup && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div ref={popupRef} className="bg-gray-800 rounded-xl p-6 w-80">
-              <h3 className="text-white font-bold mb-4">Add Cryptocurrency</h3>
+            <div
+              ref={popupRef}
+              className="bg-gray-800 rounded-xl p-6 w-80"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">
+                Add Cryptocurrency
+              </h3>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAddCrypto();
-                }}
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="bitcoin, ethereum, solana..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value.toLowerCase())}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-gray-700 text-white rounded px-3 py-2 mb-3"
+              />
+
+              {searching && (
+                <div className="text-sm text-gray-400 mb-2">Searching...</div>
+              )}
+
+              {suggestions.length > 0 && (
+                <ul className="max-h-40 overflow-y-auto space-y-2 mb-3">
+                  {suggestions.map((coin) => (
+                    <li
+                      key={coin.id}
+                      onClick={() => {
+                        setSearchInput(coin.id.toLowerCase());
+                        setSuggestions([]);
+                      }}
+                      className="cursor-pointer p-2 bg-gray-700 hover:bg-gray-600 text-white rounded"
+                    >
+                      {coin.name} ({coin.symbol.toUpperCase()})
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <button
+                onClick={() => handleAddCrypto()}
+                disabled={!searchInput.trim() || isAdding}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg disabled:opacity-50"
               >
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="bitcoin, ethereum, solana..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className="w-full bg-gray-700 text-white border border-gray-600 rounded px-3 py-2 mb-3"
-                />
-
-                {searching && (
-                  <div className="text-sm text-gray-400 mb-2">Searching...</div>
-                )}
-
-                {suggestions.length > 0 && (
-                  <ul className="max-h-40 overflow-y-auto mb-3 space-y-1">
-                    {suggestions.map((coin) => (
-                      <li
-                        key={coin.id}
-                        onClick={() => {
-                          setSearchInput(coin.id);
-                          setSuggestions([]);
-                        }}
-                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded text-white cursor-pointer"
-                      >
-                        <div className="flex justify-between">
-                          <span>{coin.name}</span>
-                          <span className="text-gray-400 text-sm">
-                            {coin.symbol.toUpperCase()}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={!searchInput.trim() || isAdding}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded disabled:opacity-50"
-                >
-                  {isAdding ? "Adding..." : `Add ${searchInput.toUpperCase()}`}
-                </button>
-              </form>
+                {isAdding ? "Adding..." : `Add ${searchInput}`}
+              </button>
             </div>
           </div>
         )}
