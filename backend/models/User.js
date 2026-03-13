@@ -50,7 +50,58 @@
 
 
 
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
+
+// const userSchema = new mongoose.Schema(
+//   {
+//     name: {
+//       type: String,
+//       trim: true,
+//       default: ""
+//     },
+//     email: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       trim: true,
+//       lowercase: true
+//     },
+//     password: {
+//       type: String,
+//       default: ""
+//     },
+//     otp: {
+//       type: String,
+//       default: null
+//     },
+//     otpExpiry: {
+//       type: Date,
+//       default: null
+//     },
+//     googleId: {
+//       type: String,
+//       default: null
+//     },
+
+//     // IMPORTANT
+//     cryptos: {
+//       type: [String],
+//       default: []
+//     }
+//   },
+//   {
+//     timestamps: true
+//   }
+// );
+
+// module.exports = mongoose.model("User", userSchema);
+
+
+
+
+
+
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
@@ -82,8 +133,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null
     },
-
-    // IMPORTANT
     cryptos: {
       type: [String],
       default: []
@@ -94,4 +143,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+
+export default User;
